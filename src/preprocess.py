@@ -5,6 +5,8 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder,OrdinalEncoder, StandardScaler
 from category_encoders import TargetEncoder
 from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -31,12 +33,52 @@ df["Owner"] = -df["Owner"]
 
 transformer = ColumnTransformer(
     transformers=[
-        ("brand_ohe", OneHotEncoder(handle_unknown="ignore"), ["brand"]),
-        ("drive_ohe", OneHotEncoder(handle_unknown="ignore"), ["Drive"]),
-        ("type_ord", OrdinalEncoder(categories=[["HatchBack", "Sedan", "Lux_sedan", "SUV", "Lux_SUV"]]) , ["Type"]),
-        ("car_te", TargetEncoder(), ["Car Name"]),
+        (
+            "brand_ohe",
+            Pipeline([
+                ("imputer", SimpleImputer(strategy="most_frequent")),
+                ("ohe", OneHotEncoder(handle_unknown="ignore"))
+            ]),
+            ["brand"]
+        ),
 
-        ("num_scaled", StandardScaler(), ["Distance", "Year", "Owner"]),
+        (
+            "drive_ohe",
+            Pipeline([
+                ("imputer", SimpleImputer(strategy="most_frequent")),
+                ("ohe", OneHotEncoder(handle_unknown="ignore"))
+            ]),
+            ["Drive"]
+        ),
+
+        (
+            "type_ord",
+            Pipeline([
+                ("imputer", SimpleImputer(strategy="most_frequent")),
+                ("ord", OrdinalEncoder(
+                    categories=[["HatchBack", "Sedan", "Lux_sedan", "SUV", "Lux_SUV"]]
+                ))
+            ]),
+            ["Type"]
+        ),
+
+        (
+            "car_te",
+            Pipeline([
+                ("imputer", SimpleImputer(strategy="most_frequent")),
+                ("te", TargetEncoder())
+            ]),
+            ["Car Name"]
+        ),
+
+        (
+            "num_scaled",
+            Pipeline([
+                ("imputer", SimpleImputer(strategy="median")),
+                ("scaler", StandardScaler())
+            ]),
+            ["Distance", "Year", "Owner"]
+        ),
     ],
     remainder="drop"
 )
@@ -44,6 +86,3 @@ transformer = ColumnTransformer(
 X = df.drop(columns=["Price"])
 y = df["Price"]
 X_train , X_test , y_train , y_test = train_test_split(X,y,test_size=0.2 , random_state = 42)
-X_train_processed = transformer.fit_transform(X_train, y_train)
-X_test_processed = transformer.transform(X_test)
-print(X_train_processed)
