@@ -36,4 +36,3 @@ joblib.dump(model, "artifacts/model.pkl")
 print("✅ Model and preprocessor saved successfully")
 
 #requirement.txt is used to save the particular versions of everything used in this project , so that in further situation , one can directly run access this repo using those same requirements.txt file folder
-
